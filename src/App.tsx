@@ -1,10 +1,10 @@
 import React from 'react';
-import Header from './components/Header';
+import EditTable from './components/EditTable';
 
 function App() {
   return (
     <div>
-      <Header/>
+      <EditTable />
     </div>
   );
 }
