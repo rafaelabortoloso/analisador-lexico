@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@material-ui/core';
 import { Char } from '../../util';
 
@@ -7,16 +7,12 @@ interface AlphabetTableProps {
 }
 
 const AlphabetTable: React.FC<AlphabetTableProps> = ({ chars }) => {
+    const tableRef = useRef<HTMLTableElement>(null);
     const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-    const [currentState, setCurrentState] = useState(["q0"]);
-
-    const getLettersArray = (label: string) => {
-        return label.split('');
-    };
 
     return (
         <TableContainer component={Paper} style={{ marginBlock: 10 }}>
-            <Table>
+            <Table ref={tableRef}>
                 <TableHead >
                     <TableRow>
                         <TableCell>δ</TableCell>
@@ -30,11 +26,6 @@ const AlphabetTable: React.FC<AlphabetTableProps> = ({ chars }) => {
                         <TableRow
                             key={char.name}
                             id={char.name}
-                            className={
-                                currentState[currentState.length - 1] === char.name
-                                    ? "active"
-                                    : ""
-                            }
                         >
                             <TableCell width="20px" align="center">
                                 {char.initial ? "➜" : char.final ? "✱" : ""}

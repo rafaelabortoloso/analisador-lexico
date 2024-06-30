@@ -4,18 +4,20 @@ import DefaultButton from '../Button';
 import ChipsArray from '../Chip';
 import AlphabetTable from '../Table';
 import { Box, CssBaseline, Typography, Toolbar, AppBar } from '@material-ui/core';
-import { Char, formattedWords } from '../../util';
+import { Char, checkLetterInTable, formattedWords } from '../../util';
 
 export interface ChipData {
     key: number;
     label: string;
 }
 
-const EditTable: React.FC = () => {
+const EditTable = () => {
     const [chipData, setChipData] = useState<ChipData[]>([]);
     const [inputValue, setInputValue] = useState<string>('');
+    const [inputValueAnalyzed, setInputValueAnalyzed] = useState<string>('');
     const [charsToken, setCharsToken] = useState<Char[]>([]);
     const [error, setError] = useState<string | undefined>('');
+    const [analyzeError, setAnalyzeError] = useState<string | undefined>('');
 
     useEffect(() => {
         const regex = /^[A-Za-z]*$/;
@@ -28,7 +30,33 @@ const EditTable: React.FC = () => {
     }, [inputValue]);
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setInputValue(event.target.value);
+        const { name, value } = event.target;
+
+        if (name === 'inserir') {
+            setInputValue(value);
+        } else {
+            try {
+                const chars = value.split("");
+                const lastChar = chars[chars.length - 1];
+                const word = inputValueAnalyzed.split("");
+                const isFirstChar = word.length === 0;
+                checkLetterInTable({ char: lastChar ? lastChar : "", isFirstChar: isFirstChar, charsToken: charsToken });
+                setInputValueAnalyzed(value);
+            } catch (error) {
+                setAnalyzeError('palavra inválida');
+                console.error(error);
+            }
+        }
+    };
+
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter') {
+            if (inputValue) {
+                handleAddChip();
+            } else {
+                setInputValueAnalyzed('');
+            }
+        }
     };
 
     const handleAddChip = () => {
@@ -46,6 +74,7 @@ const EditTable: React.FC = () => {
 
     const handleClearChips = () => {
         setChipData([]);
+        setInputValueAnalyzed('');
         setCharsToken([]);
 
     };
@@ -74,10 +103,12 @@ const EditTable: React.FC = () => {
                     <div style={{ display: 'flex', flexDirection: 'row' }}>
                         <div style={{ width: '20%', marginRight: '20px' }}>
                             <Input
+                                name='inserir'
                                 label="Insira uma palavra"
                                 style={{ width: '100%', marginTop: 10 }}
                                 value={inputValue}
                                 onChange={handleInputChange}
+                                onKeyDown={handleKeyDown}
                                 error={error}
                             />
                             <DefaultButton
@@ -92,7 +123,15 @@ const EditTable: React.FC = () => {
                                 style={{ width: '100%' }}
                                 onClick={handleClearChips}
                             />
-                            {/* <Input label="Analisar" style={{ width: '100%', marginTop: 10 }}/> */}
+                            <Input
+                                name='analisar'
+                                label="Analisar"
+                                style={{ width: '100%', marginTop: 10 }}
+                                value={inputValueAnalyzed}
+                                onChange={handleInputChange}
+                                onKeyDown={handleKeyDown}
+                                error={analyzeError}
+                            />
                         </div>
                         <div style={{ width: '80%' }}>
                             <AlphabetTable chars={charsToken} />

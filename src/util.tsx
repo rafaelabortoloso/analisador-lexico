@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 export interface Char {
     name: string;
     initial: boolean;
@@ -10,7 +12,7 @@ export interface Char {
 //charsToken = array de objetos de cada letra das palavras
 //allCharsToken = array do charsToken
 //initialToken = q0
-const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+export const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 const mergeChars = ({ charsToken: charToken, token, initial }: { charsToken: Char[], token: string, initial: boolean }) => {
     const response = {
@@ -68,6 +70,7 @@ export const formattedWords = ({ words }: { words: string[] }): Char[] => {
 
     const initialToken: Char[] = [];
     allCharsToken.forEach((charToken) => {
+
         initialToken.push(charToken[0]);
 
         charToken.forEach((token) => {
@@ -76,29 +79,6 @@ export const formattedWords = ({ words }: { words: string[] }): Char[] => {
     });
 
     charsResult.push(mergeChars({ token: "q0", charsToken: initialToken, initial: true }));
-
-    let isNew = true;
-    while (isNew) {
-        isNew = false;
-        charsResult.forEach((charTokenResult) => {
-            charTokenResult.value
-                .filter((tokens) => tokens && tokens !== "-")
-                .forEach((token) => {
-                    if (charsResult.findIndex((charResult) => charResult.name === token) < 0) {
-                        const charsToMerge = token
-                            .split(", ")
-                            .map((token) => charsResult.find((charResult) => charResult.name === token));
-
-                        if (charsToMerge.every((char) => char)) {
-                            charsResult.push(
-                                mergeChars({ token: token, initial: false, charsToken: charsToMerge as Char[] })
-                            );
-                            isNew = true;
-                        }
-                    }
-                });
-        });
-    }
 
     const finalSortedChars = charsResult.sort((a, b) => {
         const aValue = a.name.includes(",") ? 0.1 : parseInt(a.name.substring(1));
@@ -109,3 +89,42 @@ export const formattedWords = ({ words }: { words: string[] }): Char[] => {
 
     return finalSortedChars;
 };
+
+let nextToken: string;
+
+export const checkLetterInTable = ({ char, isFirstChar, charsToken }: { char: string, isFirstChar: boolean, charsToken: Char[] }) => {
+    const letterIndex = alphabet.findIndex((letter) => letter === char.toUpperCase());
+    let newLetterIndex = true;
+
+    if (isFirstChar) {
+        nextToken = charsToken[0].value[letterIndex];
+    } else {
+        if (nextToken && nextToken !== "") {
+            const nextTokenFormatted = nextToken.split(', ');
+            let foundObjects = charsToken.filter(token => nextTokenFormatted.includes(token.name));
+
+            while (foundObjects.length > 0 && newLetterIndex) {
+                const valueIndex = foundObjects.map((obj) => obj.value.findIndex((value) => value !== ""));
+
+                if (valueIndex.includes(letterIndex)) {
+                    const nextRow = foundObjects.find(obj => obj.value[letterIndex] !== "");
+
+                    nextToken = nextRow ? nextRow.value[letterIndex] : "";
+                    const nextTokenFormatted = nextToken.split(', ');
+                    foundObjects = charsToken.filter(token => nextTokenFormatted.includes(token.name));
+                    newLetterIndex = false;
+
+                    if (!foundObjects.length) {
+                        throw new Error("Palavra inválida");
+                    }
+                } else {
+                    throw new Error("Palavra inválida");
+                }
+            }
+
+        } else {
+            throw new Error("Palavra inválida");
+        }
+    }
+};
+
