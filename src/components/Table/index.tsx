@@ -1,43 +1,119 @@
-import React, { useRef, useState } from 'react';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@material-ui/core';
-import { Char } from '../../util';
+import { makeStyles } from '@material-ui/core/styles';
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import TableContainer from '@material-ui/core/TableContainer';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
+import Paper from '@material-ui/core/Paper';
 
-interface AlphabetTableProps {
-    chars: Char[];
+const useStyles = makeStyles({
+    table: {
+        minWidth: 650,
+    },
+});
+
+interface ListTestWords {
+    word: string;
+    success: boolean;
 }
 
-const AlphabetTable: React.FC<AlphabetTableProps> = ({ chars }) => {
-    const tableRef = useRef<HTMLTableElement>(null);
-    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
+
+type PatternTokens = { [key: string]: number | boolean };
+
+interface BasicTableProps {
+    table: PatternTokens[];
+    testWord: string;
+    setWord: (word: string) => void;
+    list: ListTestWords[];
+    setList: (list: ListTestWords[]) => void;
+}
+
+export default function BasicTable({
+    table,
+    testWord,
+    setList,
+    setWord,
+    list,
+}: BasicTableProps) {
+    const classes = useStyles();
+
+    const tableData = table.map((tableItem) =>
+        alphabet.map((letter) => tableItem[letter] || ''),
+    );
+
+    let currentRow = 0;
+
+    const isValidWord = () => {
+        if (testWord.length === 1) {
+            currentRow = 0;
+            return tableData[0][testWord.charCodeAt(0) - 'a'.charCodeAt(0)] !== '';
+        }
+        for (let i = 0; i < testWord.length; i++) {
+            const letter = testWord[i];
+            const number = letter.charCodeAt(0) - 'a'.charCodeAt(0);
+            if (tableData[currentRow][number] === '') {
+                return false;
+            }
+            if (i < testWord.length - 1) {
+                currentRow = tableData[currentRow][number] as number;
+            }
+        }
+        return true;
+    };
+
+    const valid = isValidWord();
+
+    if (testWord[testWord.length - 1] === ' ' && testWord.length > 1) {
+        if (table[currentRow].end === true && valid) {
+            setList([...list, { word: testWord.trim(), success: true }]);
+            setWord('');
+        } else {
+            setList([...list, { word: testWord.trim(), success: false }]);
+            setWord('');
+        }
+    }
 
     return (
-        <TableContainer component={Paper} style={{ marginBlock: 10 }}>
-            <Table ref={tableRef}>
-                <TableHead >
+        <TableContainer component={Paper}>
+            <Table className={classes.table} aria-label="simple table">
+                <TableHead>
                     <TableRow>
                         <TableCell>δ</TableCell>
                         {alphabet.map((letter) => (
-                            <TableCell style={{ maxWidth: 50 }}>{letter}</TableCell>
+                            <TableCell key={letter}>{letter}</TableCell>
                         ))}
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {chars.map((char) => (
+                    {tableData.map((rowData, i) => (
                         <TableRow
-                            key={char.name}
-                            id={char.name}
+                            key={i}
+                            style={{
+                                backgroundColor:
+                                    i === currentRow && testWord && !valid
+                                        ? 'red'
+                                        : 'transparent',
+                            }}
                         >
-                            <TableCell width="20px" align="center">
-                                {char.initial ? "➜" : char.final ? "✱" : ""}
-                                {char.name}
+                            <TableCell component="th" scope="row">
+                                {table[i].end === true ? `q${i}*` : `q${i}`}
                             </TableCell>
-                            {char.value.map((qValue, qIndex) => (
+                            {rowData.map((cellData, j) => (
                                 <TableCell
-                                    width="20px"
-                                    align="center"
-                                    key={`${qValue}${qIndex}`}
+                                    key={j}
+                                    style={{
+                                        backgroundColor:
+                                            i === currentRow &&
+                                                valid &&
+                                                testWord[testWord.length - 1] === alphabet[j] &&
+                                                cellData
+                                                ? 'green'
+                                                : 'transparent',
+                                    }}
                                 >
-                                    {qValue}
+                                    {cellData ? `q${cellData}` : '-'}
                                 </TableCell>
                             ))}
                         </TableRow>
@@ -46,8 +122,4 @@ const AlphabetTable: React.FC<AlphabetTableProps> = ({ chars }) => {
             </Table>
         </TableContainer>
     );
-};
-
-export default AlphabetTable;
-
-
+}
